@@ -1,0 +1,19 @@
+# SHANWAN Xbox360 clone controller — suppress HID report flooding
+#
+# This controller spoofs the Microsoft Xbox360 VID:PID (045e:028e) but its USB
+# manufacturer string is "SHANWAN". It has noisy analog axes that flood Wine's
+# HID report queue ("Device reports coming in too fast"), causing thread pressure
+# that contributes to RtlpWaitForCriticalSection deadlocks in LEGO City Undercover.
+#
+# Fix: set deadzone (flat=4096, ~12.5%) and fuzz (64) on analog stick axes only.
+# Triggers (Z/RZ, range 0-255) and d-pad (HAT, range -1/1) are left at 0 — they
+# are digital/small-range axes where a 4096 deadzone would disable them entirely.
+# %N = full device node path (e.g. /dev/input/event23) — %k alone gives just event23.
+# Requires: apt install joystick   (provides /usr/bin/evdev-joystick)
+
+SUBSYSTEM=="input", KERNEL=="event*", \
+    ATTRS{idVendor}=="045e", ATTRS{idProduct}=="028e", ATTRS{manufacturer}=="SHANWAN", \
+    RUN+="/usr/bin/evdev-joystick --evdev %N --axis 0 --deadzone 4096 --fuzz 64", \
+    RUN+="/usr/bin/evdev-joystick --evdev %N --axis 1 --deadzone 4096 --fuzz 64", \
+    RUN+="/usr/bin/evdev-joystick --evdev %N --axis 3 --deadzone 4096 --fuzz 64", \
+    RUN+="/usr/bin/evdev-joystick --evdev %N --axis 4 --deadzone 4096 --fuzz 64"
