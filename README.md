@@ -7,6 +7,16 @@ The game has several failure modes on Linux that are non-obvious to diagnose. Th
 documents every crash encountered, what caused it, and what fixed it — including a
 late-game freeze at the Chapter 15 moon transition that is not reported anywhere else online.
 
+## Path conventions used in this guide
+
+| Variable | Meaning | Typical value |
+|----------|---------|---------------|
+| `$HOME` | Your home directory | `/home/<youruser>` |
+| `$STEAM_LIBRARY` | Path to your Steam library | Find it in Steam → Settings → Storage. Default if you haven't added a library: `$HOME/.local/share/Steam` |
+
+Commands that reference these variables can be run as-is in any shell where they are set,
+or substitute your actual paths.
+
 ---
 
 ## Hardware this was tested on
@@ -91,8 +101,6 @@ The game stores this in:
 <wine-prefix>/pfx/drive_c/users/steamuser/AppData/Roaming/Warner Bros. Interactive Entertainment/LEGO City Undercover/pcconfig.txt
 ```
 (`ScreenWidth 1280`, `ScreenHeight 720`)
-
-Note: this is **1280×720** (standard 720p), not "2K×720". 2K would be 2560 wide.
 
 ---
 
@@ -220,7 +228,7 @@ repo. See [SHANWAN controller fix](#shanwan-xbox360-controller-fix) above.
 
 ```bash
 # 1. Check which Proton actually ran (wrong version = wrong prefix)
-cat /media/500GB/SteamLibrary/steamapps/compatdata/578330/version
+cat $STEAM_LIBRARY/steamapps/compatdata/578330/version
 
 # 2. Check the game log for errors
 tail -80 ~/steam-578330.log | grep -i "err:\|exception\|fault\|deadlock"

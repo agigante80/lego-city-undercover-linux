@@ -16,8 +16,8 @@ Last updated: 2026-04-12
 - **Kernel also tested**: 6.14.0-37-generic (older — was working before driver switch)
 - **Proton**: 3.7-8 set for this game (`proton_37` in config.vdf) ✓
 - **Steam App ID**: 578330
-- **Game path**: `/media/500GB/SteamLibrary/steamapps/common/LEGO City Undercover/`
-- **Proton prefix**: `/media/500GB/SteamLibrary/steamapps/compatdata/578330/`
+- **Game path**: `$STEAM_LIBRARY/steamapps/common/LEGO City Undercover/`
+- **Proton prefix**: `$STEAM_LIBRARY/steamapps/compatdata/578330/`
 
 ## What Was Broken
 - Game stopped working after a kernel update (6.14 → 6.17) and/or Mesa 25.2.8 update
@@ -28,7 +28,7 @@ Last updated: 2026-04-12
 ## What Was Fixed (2026-04-06)
 ### ✅ Done
 1. **Steam launch options updated** in:
-   `[redacted]/.local/share/Steam/userdata/55676049/config/localconfig.vdf`
+   `$HOME/.local/share/Steam/userdata/55676049/config/localconfig.vdf`
 
    **New launch options:**
    ```
@@ -39,7 +39,7 @@ Last updated: 2026-04-12
    - `PULSE_LATENCY_MSEC=60` — fixes audio thread deadlock (later raised to 120, see below)
 
 2. **Proton 3.7 confirmed** as the selected compatibility tool in:
-   `[redacted]/.local/share/Steam/config/config.vdf` (already set to `proton_37`)
+   `$HOME/.local/share/Steam/config/config.vdf` (already set to `proton_37`)
 
 ### ✅ Done (2026-04-06 follow-up)
 3. **nvidia-prime** is now installed (`ii` status confirmed).
@@ -95,7 +95,7 @@ Key log signatures when this happens:
 **Fix applied (2026-04-12)**:
 
 1. Created the missing manifest:
-   `/media/500GB/SteamLibrary/steamapps/appmanifest_420161.acf`
+   `$STEAM_LIBRARY/steamapps/appmanifest_420161.acf`
    (StateFlags=4, installdir="Proton 3.7", appid=420161, LastOwner=55676049)
 
 2. Restarted Steam — it re-read the manifest and re-registered Proton 3.7-8.
@@ -112,8 +112,8 @@ The prefix `version` file contained `GE-Proton10-34`, causing Proton 3.7-8 to ba
 
 **Fix**: Renamed the corrupt prefix as backup and let Proton 3.7-8 create a fresh one:
 ```bash
-mv /media/500GB/SteamLibrary/steamapps/compatdata/578330 \
-   /media/500GB/SteamLibrary/steamapps/compatdata/578330.bak-ge-proton
+mv $STEAM_LIBRARY/steamapps/compatdata/578330 \
+   $STEAM_LIBRARY/steamapps/compatdata/578330.bak-ge-proton
 ```
 Save games are stored in Steam Cloud (`userdata/55676049/578330/remote/`) — not in the prefix.
 
@@ -236,11 +236,11 @@ nano ~/.local/share/Steam/config/config.vdf
 ```
 
 ### Proton 3.7-8 manifest (must exist or Steam falls back to wrong Proton)
-`/media/500GB/SteamLibrary/steamapps/appmanifest_420161.acf`
+`$STEAM_LIBRARY/steamapps/appmanifest_420161.acf`
 
 If missing, recreate it:
 ```bash
-cat > /media/500GB/SteamLibrary/steamapps/appmanifest_420161.acf << 'EOF'
+cat > $STEAM_LIBRARY/steamapps/appmanifest_420161.acf << 'EOF'
 "AppState"
 {
 	"appid"		"420161"
@@ -273,8 +273,8 @@ EOF
 | `~/steam-578330.log` | Game log (regenerated each launch) |
 | `~/.local/share/Steam/userdata/55676049/config/localconfig.vdf` | Steam per-user config (launch options) |
 | `~/.local/share/Steam/config/config.vdf` | Steam global config (Proton version mapping) |
-| `/media/500GB/SteamLibrary/steamapps/appmanifest_420161.acf` | Proton 3.7-8 install manifest |
-| `/media/500GB/SteamLibrary/steamapps/compatdata/578330/` | Wine prefix (delete to reset) |
+| `$STEAM_LIBRARY/steamapps/appmanifest_420161.acf` | Proton 3.7-8 install manifest |
+| `$STEAM_LIBRARY/steamapps/compatdata/578330/` | Wine prefix (delete to reset) |
 | `/etc/udev/rules.d/99-shanwan-controller.rules` | SHANWAN deadzone/fuzz rule |
 | `~/shanwan-udev-setup.sh` | Script to install the udev rule (run with sudo) |
 | `/usr/share/vulkan/icd.d/nvidia_icd.json` | NVIDIA Vulkan ICD |
