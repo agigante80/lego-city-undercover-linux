@@ -159,19 +159,24 @@ A SHANWAN Xbox360 clone controller (`045e:028e`, manufacturer string `"SHANWAN"`
 Wine's HID report queue with noisy analog axis events, adding thread pressure that can
 contribute to audio deadlocks.
 
-**Install the udev deadzone rule once (requires `sudo apt install joystick` first):**
+**Install once — never needs to be run again (requires `sudo apt install joystick` first):**
 ```bash
 sudo ./shanwan-udev-setup.sh
 ```
 
-This installs `/etc/udev/rules.d/99-shanwan-controller.rules`, which auto-applies a
-4096-unit deadzone (~12.5%) and fuzz 64 on all analog stick axes every time the controller
-is plugged in.
+This installs `/etc/udev/rules.d/99-shanwan-controller.rules`. After that, nothing more is
+needed before each gaming session — udev automatically re-applies the deadzone:
+- Every time the controller is plugged in
+- On boot, if the controller is already connected
 
-**Verify it's active:**
+The deadzone is a runtime kernel parameter that resets when the device is removed, but the
+udev rule resets it back every time the device is added.
+
+**If you suspect it stopped working**, verify with:
 ```bash
 evdev-joystick --showcal /dev/input/event23
 # X/Y/RX/RY should show flatness: 4096 (=12.50%)
+# If it shows 128, unplug and replug the controller — the rule should re-apply it
 ```
 
 ---
