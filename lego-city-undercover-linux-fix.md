@@ -2,11 +2,19 @@
 Last updated: 2026-04-12
 
 ## System Info
-- **GPU**: Intel HD 530 (integrated) + NVIDIA GTX 1070 Mobile (Optimus)
-- **NVIDIA driver**: 535.288.01 (server variant — `nvidia-driver-535-server`)
-- **Mesa**: 25.2.8
-- **Kernel installed**: 6.17.0-20-generic (current), 6.14.0-37-generic (older — was working)
-- **Proton**: 3.7 set for this game (`proton_37` in config.vdf) ✓
+- **Machine**: [redacted] 17 R4
+- **OS**: Ubuntu 24.04.4 LTS (Noble Numbat)
+- **Desktop**: GNOME 46.0 on X11
+- **Display 1 (internal)**: Laptop panel, 2560×1440 active (eDP-1, capable of 3840×2160)
+- **Display 2 (external)**: Samsung S34C65xU 34" ultrawide, 3440×1440 @ 60 Hz (DP-1)
+- **Game resolution**: 1280×720 (set in-game; stored in `pcconfig.txt` in the Wine prefix)
+- **Kernel**: 6.17.0-20-generic (HWE, based on upstream 6.17.13)
+- **GPU (render)**: NVIDIA GeForce GTX 1070 (Mobile), 8 GB VRAM, PCI 01:00.0
+- **GPU (display)**: Intel HD Graphics 530 (Skylake GT2, Optimus)
+- **NVIDIA driver**: `535.288.01-0ubuntu0.24.04.3` (`nvidia-driver-535-server`)
+- **Mesa**: `25.2.8-0ubuntu0.24.04.1`
+- **Kernel also tested**: 6.14.0-37-generic (older — was working before driver switch)
+- **Proton**: 3.7-8 set for this game (`proton_37` in config.vdf) ✓
 - **Steam App ID**: 578330
 - **Game path**: `/media/500GB/SteamLibrary/steamapps/common/LEGO City Undercover/`
 - **Proton prefix**: `/media/500GB/SteamLibrary/steamapps/compatdata/578330/`
@@ -153,14 +161,62 @@ The rule file and setup script live at:
 
 ---
 
-## Current Working Configuration (2026-04-12)
+## Third Incident (2026-04-12) — Freeze at Chapter 15 Moon Transition
+
+**Symptom**: Game freezes at a specific, reproducible trigger in Chapter 15 "Far Above the
+Call of Duty": stepping into the shield on top of the tower that transitions the player to
+the moon. Hard freeze — must kill the process.
+
+**Root cause**: Two concurrent problems, confirmed from `~/steam-578330.log`:
+
+1. **Audio thread deadlock** (`RtlpWaitForCriticalSection`) — same deadlock pattern as before,
+   but triggered earlier and harder at this heavy scene-load event. Threads 0x39/0x3a/0x3b/0x3c
+   block waiting for a PulseAudio critical section held by thread 0x39; after 60 s timeouts
+   chain, the main thread (0x25) crashes with a page fault.
+   `PULSE_LATENCY_MSEC=120` was insufficient for this scene's audio load.
+
+2. **Explicit Vulkan ICD not set** — `__VK_LAYER_NV_optimus=NVIDIA_only` routes Vulkan through
+   the Optimus layer but does not explicitly pin the ICD file. Adding
+   `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json` removes any ambiguity about
+   which Vulkan driver loads.
+
+Note: SHANWAN deadzone (flatness 4096) was verified as active before the session —
+not a contributor this time.
+
+**Fix applied (2026-04-12)**:
+
+Updated launch options — two changes:
+- `PULSE_LATENCY_MSEC` raised from 120 → **240** (doubles audio buffer for heavy scene transitions)
+- Added `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json` (explicit NVIDIA ICD)
+
+```
+__NV_PRIME_RENDER_OFFLOAD=1 __VK_LAYER_NV_optimus=NVIDIA_only __GLX_VENDOR_LIBRARY_NAME=nvidia VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json PULSE_LATENCY_MSEC=240 PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 PROTON_LOG=1 %command%
+```
+
+**Community research note (2026-04-12)**: The exact Chapter 15 freeze is unreported publicly,
+but it is the same class of bug as confirmed level-transition crashes at the museum (Ch.10),
+sewer, dojo, and "Dirty Work" scenes. The most widely confirmed community workaround for that
+class is **lowering resolution to 1280×720 before entering the transition marker**, reported
+working across PC, Steam Deck, and Xbox. Sources: Steam Community threads 1319961618831079047
+and 3489752656793261208. Active controller input at transition markers was also independently
+confirmed to trigger identical hangs on Steam Deck.
+
+**✅ RESOLVED (2026-04-12)** — adding `WINEDLLOVERRIDES="xaudio2_7=n,b"` to launch options
+fixed the freeze. Confirmed by reconnecting the SHANWAN controller after the transition
+succeeded — it loaded correctly, proving the controller was not a factor. Root cause was
+purely the XAudio2 threading deadlock in Proton 3.7's built-in XAudio2 implementation;
+the override routes to Wine's own stub, bypassing the deadlock.
+
+---
+
+## Current Working Configuration (2026-04-12 rev 3)
 
 ### Launch options
 File: `~/.local/share/Steam/userdata/55676049/config/localconfig.vdf`
 Search for app `578330` → `"LaunchOptions"` key.
 
 ```
-__NV_PRIME_RENDER_OFFLOAD=1 __VK_LAYER_NV_optimus=NVIDIA_only __GLX_VENDOR_LIBRARY_NAME=nvidia PULSE_LATENCY_MSEC=120 PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 PROTON_LOG=1 %command%
+__NV_PRIME_RENDER_OFFLOAD=1 __VK_LAYER_NV_optimus=NVIDIA_only __GLX_VENDOR_LIBRARY_NAME=nvidia VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json PULSE_LATENCY_MSEC=240 PROTON_NO_ESYNC=1 PROTON_NO_FSYNC=1 WINEDLLOVERRIDES="xaudio2_7=n,b" PROTON_LOG=1 %command%
 ```
 
 To edit directly (close Steam first, or it will overwrite on exit):

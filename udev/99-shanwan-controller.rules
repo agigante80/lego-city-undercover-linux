@@ -1,15 +1,62 @@
-# SHANWAN Xbox360 clone controller — suppress HID report flooding
+# /etc/udev/rules.d/99-shanwan-controller.rules
 #
-# This controller spoofs the Microsoft Xbox360 VID:PID (045e:028e) but its USB
-# manufacturer string is "SHANWAN". It has noisy analog axes that flood Wine's
-# HID report queue ("Device reports coming in too fast"), causing thread pressure
-# that contributes to RtlpWaitForCriticalSection deadlocks in LEGO City Undercover.
+# Suppresses HID report flooding from a SHANWAN Xbox360 clone controller
+# by applying a deadzone and fuzz filter on its analog stick axes.
 #
-# Fix: set deadzone (flat=4096, ~12.5%) and fuzz (64) on analog stick axes only.
-# Triggers (Z/RZ, range 0-255) and d-pad (HAT, range -1/1) are left at 0 — they
-# are digital/small-range axes where a 4096 deadzone would disable them entirely.
-# %N = full device node path (e.g. /dev/input/event23) — %k alone gives just event23.
-# Requires: apt install joystick   (provides /usr/bin/evdev-joystick)
+# PROBLEM:
+#   The SHANWAN Xbox360 clone (USB VID 045e, PID 028e) spoofs the real Microsoft
+#   Xbox360 controller VID:PID. It cannot be distinguished by VID/PID alone —
+#   the only reliable identifier is its USB manufacturer string: "SHANWAN".
+#
+#   Its analog sticks emit a continuous stream of micro-movement events even when
+#   the stick is fully centred and untouched. Under Wine/Proton these fill the HID
+#   report queue faster than Wine can drain it:
+#
+#     err:hid_report:process_hid_report Device reports coming in too fast,
+#     last report not read yet!
+#
+#   The resulting thread pressure can trigger RtlpWaitForCriticalSection timeouts
+#   in Wine's audio subsystem, causing games to deadlock and crash — confirmed in
+#   LEGO City Undercover (Steam 578330) running under Proton 3.7-8.
+#
+# FIX:
+#   Apply a 4096-unit deadzone (flat=4096, ~12.5% of the ±32767 axis range) and
+#   kernel-level fuzz 64 on the four analog stick axes (left X/Y and right X/Y).
+#   This silences the jitter events at the hardware driver level before they reach
+#   Wine's HID layer.
+#
+# AXES TARGETED:
+#   Axis 0 (X)  — left stick horizontal
+#   Axis 1 (Y)  — left stick vertical
+#   Axis 3 (RX) — right stick horizontal
+#   Axis 4 (RY) — right stick vertical
+#
+# AXES LEFT UNTOUCHED (deadzone intentionally NOT applied):
+#   Axis 2 (Z)   — left trigger  (range 0–255; a 4096 deadzone would disable it)
+#   Axis 5 (RZ)  — right trigger (same reason)
+#   Axis 16 (HAT X) — d-pad horizontal (range -1/0/1; deadzone would break it)
+#   Axis 17 (HAT Y) — d-pad vertical   (same reason)
+#
+# VARIABLES:
+#   %N — expands to the full device node path, e.g. /dev/input/event23
+#        (%k alone would give only "event23", not the full path evdev-joystick needs)
+#
+# REQUIREMENT:
+#   The joystick package must be installed for evdev-joystick to be available:
+#     sudo apt install joystick
+#
+# INSTALLATION:
+#   sudo cp 99-shanwan-controller.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   (Or run the provided shanwan-udev-setup.sh which does this automatically.)
+#
+# VERIFICATION (after replug):
+#   evdev-joystick --showcal /dev/input/eventXX
+#   Axes 0, 1, 3, 4 should show: flatness: 4096 (=12.50%), fuzz: 64
+#
+# Tested on:
+#   Ubuntu 24.04.4 LTS (Noble), kernel 6.17.0-20-generic
+#   Controller: USB 045e:028e, manufacturer "SHANWAN"
 
 SUBSYSTEM=="input", KERNEL=="event*", \
     ATTRS{idVendor}=="045e", ATTRS{idProduct}=="028e", ATTRS{manufacturer}=="SHANWAN", \
