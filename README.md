@@ -274,3 +274,9 @@ chronological record of every crash, root cause analysis, and fix applied.
 | `lego-city-undercover-linux-fix.md` | Full incident log |
 | `shanwan-udev-setup.sh` | Install script for the SHANWAN udev rule |
 | `udev/99-shanwan-controller.rules` | The udev rule itself |
+
+## Sponsor
+
+I build and maintain this in my own time. It is free, it stays free, and it gets maintained either way.
+
+If it saved you some time and you feel like saying thanks, you can do that at [github.com/sponsors/agigante80](https://github.com/sponsors/agigante80). Entirely optional, and nothing about the project changes either way.
