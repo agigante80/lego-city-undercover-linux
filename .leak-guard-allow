@@ -1,0 +1,9 @@
+# Things this project has decided it may show. Tracked and public on purpose.
+# Keys: root, prefix, email (public scanner); skip (both).
+# NEVER put a private NAME here — the file is public, and a name would be an index.
+root proj
+# README.md:14: placeholder segment in setup instructions
+prefix /home/<youruser>
+# README.md, lego-city-undercover-linux-fix.md: example log/script filenames used in the guide
+root steam-578330.log
+root shanwan-udev-setup.sh
