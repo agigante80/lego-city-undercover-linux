@@ -2,7 +2,7 @@
 Last updated: 2026-04-12
 
 ## System Info
-- **Machine**: [redacted] 17 R4
+- **Machine**: 2017 Intel/NVIDIA gaming laptop
 - **OS**: Ubuntu 24.04.4 LTS (Noble Numbat)
 - **Desktop**: GNOME 46.0 on X11
 - **Display 1 (internal)**: Laptop panel, 2560×1440 active (eDP-1, capable of 3840×2160)

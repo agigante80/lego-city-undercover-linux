@@ -23,7 +23,7 @@ or substitute your actual paths.
 
 | Component | Value |
 |-----------|-------|
-| Machine | [redacted] 17 R4 |
+| Machine | 2017 Intel/NVIDIA gaming laptop |
 | OS | Ubuntu 24.04.4 LTS (Noble Numbat) |
 | Desktop | GNOME 46.0 on X11 |
 | Display 1 (internal) | Laptop panel — 2560×1440 (eDP-1, panel capable of 3840×2160) |
